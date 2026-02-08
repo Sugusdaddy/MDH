@@ -563,15 +563,15 @@
         };
         
         // Initialize Supabase (with fallback)
-        let supabase = null;
+        let db = null;
         try {
             if (CONFIG.SUPABASE_URL !== 'YOUR_SUPABASE_URL' && window.supabase) {
-                supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+                db = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
                 console.log('Supabase initialized');
             }
         } catch (e) {
             console.warn('Supabase init failed, using localStorage:', e);
-            supabase = null;
+            db = null;
         }
 
         // ═══════════════════════════════════════════
@@ -1046,14 +1046,14 @@
         // STATE PERSISTENCE (Supabase)
         // ═══════════════════════════════════════════
         async function saveCanvasState(x, y, color, txSignature) {
-            if (!supabase) {
+            if (!db) {
                 localStorage.setItem('mdh_canvas', JSON.stringify({ canvas: canvasState, stats }));
                 return;
             }
             
             try {
                 // Save pixel to database
-                await supabase.from('pixels').upsert({
+                await db.from('pixels').upsert({
                     id: y * CONFIG.CANVAS_SIZE + x,
                     x, y, color,
                     wallet: walletPublicKey?.toString(),
@@ -1062,7 +1062,7 @@
                 });
                 
                 // Update stats
-                await supabase.from('stats').upsert({
+                await db.from('stats').upsert({
                     id: 1,
                     pixels_painted: stats.pixelsPainted,
                     tokens_burned: stats.tokensBurned
@@ -1076,7 +1076,7 @@
             // Always render canvas first
             renderCanvas();
             
-            if (!supabase) {
+            if (!db) {
                 try {
                     const saved = JSON.parse(localStorage.getItem('mdh_canvas') || '{}');
                     if (saved.canvas) { canvasState = saved.canvas; stats = saved.stats || stats; }
@@ -1135,7 +1135,7 @@
 
         // Real-time updates
         function setupRealtimeUpdates() {
-            if (!supabase) return;
+            if (!db) return;
             
             supabase
                 .channel('pixels')
