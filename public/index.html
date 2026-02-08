@@ -992,9 +992,17 @@
 
         function createBurnInstruction(account, mint, owner, amount) {
             const TOKEN_PROGRAM_ID = new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
-            const data = Buffer.alloc(9);
-            data.writeUInt8(8, 0);
-            data.writeBigUInt64LE(BigInt(amount), 1);
+            
+            // Create data buffer: 1 byte instruction + 8 bytes amount (little endian)
+            const data = new Uint8Array(9);
+            data[0] = 8; // Burn instruction index
+            
+            // Write amount as little-endian u64
+            const amountBigInt = BigInt(amount);
+            for (let i = 0; i < 8; i++) {
+                data[1 + i] = Number((amountBigInt >> BigInt(i * 8)) & BigInt(0xff));
+            }
+            
             return new solanaWeb3.TransactionInstruction({
                 keys: [
                     { pubkey: account, isSigner: false, isWritable: true },
