@@ -578,37 +578,37 @@
         const WALLETS = [
             {
                 name: 'Phantom',
-                icon: 'https://phantom.app/img/phantom-icon-purple.svg',
+                icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiBmaWxsPSJub25lIj48cmVjdCB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgZmlsbD0iIzU1M0M5QSIgcng9IjY0Ii8+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTExMC40IDY0LjJjMCAxOC0xNC41IDMyLjYtMzIuNSAzMi42aC00LjRhNi42IDYuNiAwIDAgMS02LjYtNi42di0uNWMwLTMgMi40LTUuNSA1LjQtNS42aDUuNWMxMi4yIDAgMjIuMS05LjkgMjIuMS0yMi4xIDAtMTIuMi05LjktMjIuMS0yMi4xLTIyLjFIMzkuMmMtLjMgMC0uNS4yLS41LjV2NDYuM2MwIDMuNi0yLjkgNi42LTYuNiA2LjZoLS40Yy0zLjYgMC02LjYtMy02LjYtNi42VjQwLjJjMC0zLjYgMy02LjYgNi42LTYuNmg0Ni4yYzE4IDAgMzIuNSAxNC42IDMyLjUgMzIuNloiLz48Y2lyY2xlIGN4PSI0Ni4zIiBjeT0iNjQuMiIgcj0iNi42IiBmaWxsPSIjZmZmIi8+PGNpcmNsZSBjeD0iNjkuMiIgY3k9IjY0LjIiIHI9IjYuNiIgZmlsbD0iI2ZmZiIvPjwvc3ZnPg==',
                 detect: () => window.phantom?.solana?.isPhantom,
                 provider: () => window.phantom?.solana
             },
             {
                 name: 'Solflare',
-                icon: 'https://solflare.com/favicon.ico',
-                detect: () => window.solflare?.isSolflare,
+                icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIHJ4PSIyNCIgZmlsbD0iIzFBMUExQSIvPjxwYXRoIGQ9Ik05NiA2NEw2NCAzMkwzMiA2NEw2NCA5Nkw5NiA2NFoiIGZpbGw9IiNGQzgwMUQiLz48L3N2Zz4=',
+                detect: () => window.solflare?.isSolflare || window.solflare,
                 provider: () => window.solflare
             },
             {
                 name: 'Backpack',
-                icon: 'https://backpack.app/favicon.ico',
-                detect: () => window.backpack,
+                icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIHJ4PSIyNCIgZmlsbD0iI0U0M0QzRCIvPjxwYXRoIGQ9Ik00MCA0OEg4OFY4MEg0MFY0OFoiIGZpbGw9IndoaXRlIi8+PC9zdmc+',
+                detect: () => window.backpack?.isBackpack,
                 provider: () => window.backpack
             },
             {
                 name: 'Glow',
-                icon: 'https://glow.app/favicon.ico',
-                detect: () => window.glow,
-                provider: () => window.glow
+                icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIHJ4PSIyNCIgZmlsbD0iIzVDNkJDMCIvPjxjaXJjbGUgY3g9IjY0IiBjeT0iNjQiIHI9IjMyIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==',
+                detect: () => window.glowSolana,
+                provider: () => window.glowSolana
             },
             {
                 name: 'Trust Wallet',
-                icon: 'https://trustwallet.com/assets/images/favicon.png',
+                icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIHJ4PSIyNCIgZmlsbD0iIzMzNzVCQiIvPjxwYXRoIGQ9Ik02NCAzMkw5NiA0OFY4MEw2NCA5NkwzMiA4MFY0OEw2NCAzMloiIGZpbGw9IndoaXRlIi8+PC9zdmc+',
                 detect: () => window.trustwallet?.solana,
                 provider: () => window.trustwallet?.solana
             },
             {
                 name: 'Coinbase',
-                icon: 'https://www.coinbase.com/favicon.ico',
+                icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIHJ4PSIyNCIgZmlsbD0iIzAwNTJGRiIvPjxjaXJjbGUgY3g9IjY0IiBjeT0iNjQiIHI9IjMyIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==',
                 detect: () => window.coinbaseSolana,
                 provider: () => window.coinbaseSolana
             }
@@ -738,13 +738,47 @@
                 showLoading('Connecting...');
 
                 walletProvider = wallet.provider();
-                const resp = await walletProvider.connect();
-                walletPublicKey = resp.publicKey;
+                
+                if (!walletProvider) {
+                    throw new Error('Wallet provider not found');
+                }
+
+                // Try to connect
+                let pubKey = null;
+
+                // Check if already connected
+                if (walletProvider.publicKey) {
+                    pubKey = walletProvider.publicKey;
+                } else if (walletProvider.isConnected && walletProvider.publicKey) {
+                    pubKey = walletProvider.publicKey;
+                } else {
+                    // Need to connect
+                    try {
+                        const resp = await walletProvider.connect();
+                        // Different wallets return publicKey differently
+                        pubKey = resp?.publicKey || walletProvider.publicKey;
+                    } catch (connectErr) {
+                        // Some wallets throw if already connected, check publicKey
+                        if (walletProvider.publicKey) {
+                            pubKey = walletProvider.publicKey;
+                        } else {
+                            throw connectErr;
+                        }
+                    }
+                }
+
+                if (!pubKey) {
+                    throw new Error('Could not get public key from wallet');
+                }
+
+                walletPublicKey = pubKey;
                 walletConnected = true;
 
                 const btn = document.getElementById('connectBtn');
                 btn.classList.add('connected');
-                btn.textContent = `${walletPublicKey.toString().slice(0, 4)}...${walletPublicKey.toString().slice(-4)}`;
+                
+                const pubKeyStr = walletPublicKey.toString();
+                btn.textContent = `${pubKeyStr.slice(0, 4)}...${pubKeyStr.slice(-4)}`;
 
                 if (selectedX !== null) {
                     document.getElementById('paintBtn').disabled = false;
@@ -752,9 +786,12 @@
 
                 hideLoading();
                 showToast('Connected', 'success');
+                console.log('Wallet connected:', pubKeyStr);
+                
             } catch (err) {
+                console.error('Wallet connection error:', err);
                 hideLoading();
-                showToast('Connection failed', 'error');
+                showToast(err.message || 'Connection failed', 'error');
             }
         }
 
@@ -894,10 +931,25 @@
 
                 showLoading('Approve in wallet...');
 
-                const signed = await walletProvider.signTransaction(transaction);
+                let signature;
                 
-                showLoading('Sending...');
-                const signature = await connection.sendRawTransaction(signed.serialize());
+                // Try signAndSendTransaction first (some wallets prefer this)
+                if (walletProvider.signAndSendTransaction) {
+                    try {
+                        const result = await walletProvider.signAndSendTransaction(transaction);
+                        signature = result.signature || result;
+                    } catch (e) {
+                        // Fallback to signTransaction
+                        const signed = await walletProvider.signTransaction(transaction);
+                        showLoading('Sending...');
+                        signature = await connection.sendRawTransaction(signed.serialize());
+                    }
+                } else {
+                    // Use signTransaction
+                    const signed = await walletProvider.signTransaction(transaction);
+                    showLoading('Sending...');
+                    signature = await connection.sendRawTransaction(signed.serialize());
+                }
                 
                 showLoading('Confirming...');
                 await connection.confirmTransaction(signature, 'confirmed');
@@ -923,11 +975,17 @@
 
             } catch (err) {
                 hideLoading();
-                if (err.message?.includes('User rejected') || err.message?.includes('cancelled')) {
+                console.error('Paint error:', err);
+                
+                const msg = err.message || String(err);
+                if (msg.includes('User rejected') || msg.includes('cancelled') || msg.includes('denied')) {
                     showToast('Cancelled', 'error');
+                } else if (msg.includes('insufficient')) {
+                    showToast('Insufficient balance', 'error');
+                } else if (msg.includes('blockhash')) {
+                    showToast('Transaction expired, try again', 'error');
                 } else {
-                    showToast('Transaction failed', 'error');
-                    console.error(err);
+                    showToast('Transaction failed: ' + msg.slice(0, 50), 'error');
                 }
             }
         }
