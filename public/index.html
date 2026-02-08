@@ -1271,19 +1271,22 @@
         function setupRealtimeUpdates() {
             if (!db) return;
             
-            supabase
-                .channel('pixels')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'pixels' }, (payload) => {
-                    if (payload.new) {
-                        const p = payload.new;
-                        canvasState[p.y * CONFIG.CANVAS_SIZE + p.x] = p.color;
-                        stats.pixelsPainted++;
-                        stats.tokensBurned += CONFIG.COST_PER_PIXEL;
-                        updateStats();
-                        renderCanvas();
-                    }
-                })
-                .subscribe();
+            try {
+                db.channel('pixels')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'pixels' }, (payload) => {
+                        if (payload.new) {
+                            const p = payload.new;
+                            canvasState[p.y * CONFIG.CANVAS_SIZE + p.x] = p.color;
+                            stats.pixelsPainted++;
+                            stats.tokensBurned += CONFIG.COST_PER_PIXEL;
+                            updateStats();
+                            renderCanvas();
+                        }
+                    })
+                    .subscribe();
+            } catch (e) {
+                console.warn('Realtime setup failed:', e);
+            }
         }
 
         // Poll for updates (fallback)
