@@ -578,8 +578,7 @@
         // STATE
         // ═══════════════════════════════════════════
         let canvasState = new Array(CONFIG.CANVAS_SIZE * CONFIG.CANVAS_SIZE).fill('#000000');
-        let selectedX = null;
-        let selectedY = null;
+        let selectedPixels = []; // Array of {x, y}
         let selectedColor = '#00ff00';
         let zoomLevel = 1;
         let walletConnected = false;
@@ -587,6 +586,8 @@
         let walletProvider = null;
         let connection = null;
         let stats = { pixelsPainted: 0, tokensBurned: 0 };
+        let isSelecting = false;
+        let selectionStart = null;
 
         // ═══════════════════════════════════════════
         // WALLETS CONFIG
@@ -669,20 +670,85 @@
                 const x = Math.floor((e.clientX - rect.left) / zoomLevel);
                 const y = Math.floor((e.clientY - rect.top) / zoomLevel);
                 if (x >= 0 && x < CONFIG.CANVAS_SIZE && y >= 0 && y < CONFIG.CANVAS_SIZE) {
-                    document.getElementById('coordsDisplay').textContent = `X: ${x} Y: ${y}`;
+                    document.getElementById('coordsDisplay').textContent = `X: ${x} Y: ${y} | Selected: ${selectedPixels.length}`;
+                    
+                    // If dragging, add pixels to selection
+                    if (isSelecting && selectionStart) {
+                        updateDragSelection(selectionStart.x, selectionStart.y, x, y);
+                    }
                 }
             });
 
-            canvas.addEventListener('click', (e) => {
+            canvas.addEventListener('mousedown', (e) => {
                 const rect = canvas.getBoundingClientRect();
                 const x = Math.floor((e.clientX - rect.left) / zoomLevel);
                 const y = Math.floor((e.clientY - rect.top) / zoomLevel);
                 if (x >= 0 && x < CONFIG.CANVAS_SIZE && y >= 0 && y < CONFIG.CANVAS_SIZE) {
-                    selectPixel(x, y);
+                    isSelecting = true;
+                    selectionStart = { x, y };
+                    
+                    // If not holding shift, clear previous selection
+                    if (!e.shiftKey) {
+                        selectedPixels = [];
+                    }
+                    
+                    togglePixelSelection(x, y);
+                    renderCanvas();
                 }
             });
 
+            canvas.addEventListener('mouseup', (e) => {
+                isSelecting = false;
+                selectionStart = null;
+                updateSelectionUI();
+            });
+
+            canvas.addEventListener('mouseleave', () => {
+                isSelecting = false;
+                selectionStart = null;
+            });
+
             renderCanvas();
+        }
+        
+        function togglePixelSelection(x, y) {
+            const idx = selectedPixels.findIndex(p => p.x === x && p.y === y);
+            if (idx === -1) {
+                selectedPixels.push({ x, y });
+            }
+        }
+        
+        function updateDragSelection(x1, y1, x2, y2) {
+            const minX = Math.min(x1, x2);
+            const maxX = Math.max(x1, x2);
+            const minY = Math.min(y1, y2);
+            const maxY = Math.max(y1, y2);
+            
+            // Clear and add all pixels in rectangle
+            selectedPixels = [];
+            for (let y = minY; y <= maxY; y++) {
+                for (let x = minX; x <= maxX; x++) {
+                    selectedPixels.push({ x, y });
+                }
+            }
+            renderCanvas();
+        }
+        
+        function updateSelectionUI() {
+            const count = selectedPixels.length;
+            const cost = count * CONFIG.COST_PER_PIXEL;
+            
+            if (count === 0) {
+                document.getElementById('selectionContent').innerHTML = 
+                    '<div class="selection-empty">Click or drag to select pixels</div>';
+                document.getElementById('paintBtn').disabled = true;
+            } else {
+                document.getElementById('selectionContent').innerHTML = `
+                    <div class="selection-coords">${count} pixel${count > 1 ? 's' : ''}</div>
+                    <div class="selection-cost">Cost: <strong>${cost.toLocaleString()} $MDH</strong></div>
+                `;
+                document.getElementById('paintBtn').disabled = !walletConnected;
+            }
         }
 
         function initColors() {
@@ -808,7 +874,7 @@
                 const pubKeyStr = walletPublicKey.toString();
                 btn.textContent = `${pubKeyStr.slice(0, 4)}...${pubKeyStr.slice(-4)}`;
 
-                if (selectedX !== null) {
+                if (selectedPixels.length > 0) {
                     document.getElementById('paintBtn').disabled = false;
                 }
 
@@ -872,31 +938,29 @@
                 }
             }
 
-            // Selection highlight
-            if (selectedX !== null && selectedY !== null) {
+            // Selection highlight - draw all selected pixels
+            if (selectedPixels.length > 0) {
+                ctx.fillStyle = selectedColor;
+                ctx.globalAlpha = 0.5;
+                selectedPixels.forEach(p => {
+                    ctx.fillRect(p.x * zoomLevel, p.y * zoomLevel, zoomLevel, zoomLevel);
+                });
+                ctx.globalAlpha = 1;
+                
+                // Border around selection
                 ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(
-                    selectedX * zoomLevel + 1,
-                    selectedY * zoomLevel + 1,
-                    zoomLevel - 2,
-                    zoomLevel - 2
-                );
+                ctx.lineWidth = 1;
+                selectedPixels.forEach(p => {
+                    ctx.strokeRect(p.x * zoomLevel, p.y * zoomLevel, zoomLevel, zoomLevel);
+                });
             }
 
             document.getElementById('zoomLevel').textContent = `${zoomLevel}×`;
         }
-
-        function selectPixel(x, y) {
-            selectedX = x;
-            selectedY = y;
-            
-            document.getElementById('selectionContent').innerHTML = `
-                <div class="selection-coords">(${x}, ${y})</div>
-                <div class="selection-cost">Cost: <strong>10,000 $MDH</strong></div>
-            `;
-            
-            document.getElementById('paintBtn').disabled = !walletConnected;
+        
+        function clearSelection() {
+            selectedPixels = [];
+            updateSelectionUI();
             renderCanvas();
         }
 
@@ -912,9 +976,12 @@
         // PAINT
         // ═══════════════════════════════════════════
         async function paintPixel() {
-            if (!walletConnected || selectedX === null) return;
+            if (!walletConnected || selectedPixels.length === 0) return;
 
-            showLoading('Preparing transaction...');
+            const pixelCount = selectedPixels.length;
+            const totalCost = pixelCount * CONFIG.COST_PER_PIXEL;
+            
+            showLoading(`Preparing transaction for ${pixelCount} pixel${pixelCount > 1 ? 's' : ''}...`);
 
             try {
                 const mintPubkey = new solanaWeb3.PublicKey(CONFIG.TOKEN_MINT);
@@ -933,15 +1000,16 @@
                 const tokenAccount = tokenAccounts.value[0];
                 const balance = tokenAccount.account.data.parsed.info.tokenAmount.uiAmount;
 
-                if (balance < CONFIG.COST_PER_PIXEL) {
+                if (balance < totalCost) {
                     hideLoading();
-                    showToast(`Need ${CONFIG.COST_PER_PIXEL.toLocaleString()} $MDH`, 'error');
+                    showToast(`Need ${totalCost.toLocaleString()} $MDH (you have ${balance.toLocaleString()})`, 'error');
                     return;
                 }
 
                 showLoading('Creating burn transaction...');
 
-                const burnAmount = CONFIG.COST_PER_PIXEL * Math.pow(10, CONFIG.TOKEN_DECIMALS);
+                // Burn total amount for all pixels
+                const burnAmount = totalCost * Math.pow(10, CONFIG.TOKEN_DECIMALS);
                 const transaction = new solanaWeb3.Transaction();
                 
                 const burnInstruction = createBurnInstruction(
@@ -957,7 +1025,7 @@
                 transaction.recentBlockhash = blockhash;
                 transaction.feePayer = walletPublicKey;
 
-                showLoading('Approve in wallet...');
+                showLoading(`Approve ${totalCost.toLocaleString()} $MDH burn...`);
 
                 let signature;
                 
@@ -982,24 +1050,28 @@
                 showLoading('Confirming...');
                 await connection.confirmTransaction(signature, 'confirmed');
 
-                // Update state
-                const px = selectedX, py = selectedY, pc = selectedColor;
-                canvasState[py * CONFIG.CANVAS_SIZE + px] = pc;
-                stats.pixelsPainted++;
-                stats.tokensBurned += CONFIG.COST_PER_PIXEL;
+                // Update state for all selected pixels
+                const paintedPixels = [...selectedPixels];
+                const paintedColor = selectedColor;
                 
-                saveCanvasState(px, py, pc, signature);
+                paintedPixels.forEach(p => {
+                    canvasState[p.y * CONFIG.CANVAS_SIZE + p.x] = paintedColor;
+                });
+                
+                stats.pixelsPainted += pixelCount;
+                stats.tokensBurned += totalCost;
+                
+                // Save all pixels to database
+                await saveMultiplePixels(paintedPixels, paintedColor, signature);
                 updateStats();
 
-                selectedX = null;
-                selectedY = null;
-                document.getElementById('selectionContent').innerHTML = 
-                    '<div class="selection-empty">Click a pixel to select</div>';
-                document.getElementById('paintBtn').disabled = true;
+                // Clear selection
+                selectedPixels = [];
+                updateSelectionUI();
                 
                 renderCanvas();
                 hideLoading();
-                showToast('Pixel painted!', 'success');
+                showToast(`${pixelCount} pixel${pixelCount > 1 ? 's' : ''} painted!`, 'success');
 
             } catch (err) {
                 hideLoading();
@@ -1069,6 +1141,53 @@
                     showToast('Error saving pixel: ' + pixelError.message, 'error');
                 } else {
                     console.log('Pixel saved:', pixelData);
+                }
+                
+                // Update stats
+                const { error: statsError } = await db.from('stats').upsert({
+                    id: 1,
+                    pixels_painted: stats.pixelsPainted,
+                    tokens_burned: stats.tokensBurned
+                });
+                
+                if (statsError) {
+                    console.error('Stats save error:', statsError);
+                }
+            } catch (err) {
+                console.error('Save error:', err);
+                showToast('Save failed', 'error');
+            }
+        }
+        
+        async function saveMultiplePixels(pixels, color, txSignature) {
+            console.log('Saving multiple pixels:', { count: pixels.length, color, txSignature, db: !!db });
+            
+            if (!db) {
+                console.log('No db, using localStorage');
+                localStorage.setItem('mdh_canvas', JSON.stringify({ canvas: canvasState, stats }));
+                return;
+            }
+            
+            try {
+                // Prepare batch of pixels
+                const pixelsToInsert = pixels.map(p => ({
+                    id: p.y * CONFIG.CANVAS_SIZE + p.x,
+                    x: p.x,
+                    y: p.y,
+                    color,
+                    wallet: walletPublicKey?.toString(),
+                    tx_signature: txSignature,
+                    updated_at: new Date().toISOString()
+                }));
+                
+                // Batch upsert all pixels
+                const { error: pixelError } = await db.from('pixels').upsert(pixelsToInsert);
+                
+                if (pixelError) {
+                    console.error('Pixels save error:', pixelError);
+                    showToast('Error saving pixels: ' + pixelError.message, 'error');
+                } else {
+                    console.log('Pixels saved:', pixels.length);
                 }
                 
                 // Update stats
