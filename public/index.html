@@ -476,7 +476,7 @@
                 <span id="coordsDisplay">X: 0 Y: 0</span>
                 <div class="zoom-controls">
                     <button class="zoom-btn" onclick="zoomOut()">−</button>
-                    <span id="zoomLevel">5×</span>
+                    <span id="zoomLevel">1×</span>
                     <button class="zoom-btn" onclick="zoomIn()">+</button>
                 </div>
             </div>
@@ -581,7 +581,7 @@
         let selectedX = null;
         let selectedY = null;
         let selectedColor = '#00ff00';
-        let zoomLevel = 5;
+        let zoomLevel = 1;
         let walletConnected = false;
         let walletPublicKey = null;
         let walletProvider = null;
@@ -901,11 +901,11 @@
         }
 
         function zoomIn() {
-            if (zoomLevel < 10) { zoomLevel++; renderCanvas(); }
+            if (zoomLevel < 5) { zoomLevel++; renderCanvas(); }
         }
 
         function zoomOut() {
-            if (zoomLevel > 2) { zoomLevel--; renderCanvas(); }
+            if (zoomLevel > 1) { zoomLevel--; renderCanvas(); }
         }
 
         // ═══════════════════════════════════════════
