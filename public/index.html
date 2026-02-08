@@ -546,6 +546,7 @@
     <div class="toast" id="toast"></div>
 
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script>
         // ═══════════════════════════════════════════
         // CONFIG
@@ -555,8 +556,17 @@
             TOKEN_MINT: 'AtuZNNV27hs3AjTf5dLMyxftsnqdv8DpmJWCmEimBAGS',
             COST_PER_PIXEL: 10000,
             TOKEN_DECIMALS: 9,
-            RPC_URL: 'https://mainnet.helius-rpc.com/?api-key=d3e130a0-6d2c-4b0e-9175-45f3a3cda97b'
+            RPC_URL: 'https://mainnet.helius-rpc.com/?api-key=d3e130a0-6d2c-4b0e-9175-45f3a3cda97b',
+            // Supabase config - REPLACE WITH YOUR VALUES
+            SUPABASE_URL: 'YOUR_SUPABASE_URL',
+            SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY'
         };
+        
+        // Initialize Supabase
+        let supabase = null;
+        if (CONFIG.SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+            supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+        }
 
         // ═══════════════════════════════════════════
         // STATE
@@ -631,6 +641,7 @@
             initColors();
             initWalletList();
             loadCanvasState();
+            setupRealtimeUpdates();
         });
 
         function initCanvas() {
@@ -1015,39 +1026,75 @@
         }
 
         // ═══════════════════════════════════════════
-        // STATE PERSISTENCE
+        // STATE PERSISTENCE (Supabase)
         // ═══════════════════════════════════════════
         async function saveCanvasState(x, y, color, txSignature) {
+            if (!supabase) {
+                localStorage.setItem('mdh_canvas', JSON.stringify({ canvas: canvasState, stats }));
+                return;
+            }
+            
             try {
-                await fetch('/api/pixel', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ x, y, color, wallet: walletPublicKey?.toString(), txSignature })
+                // Save pixel to database
+                await supabase.from('pixels').upsert({
+                    id: y * CONFIG.CANVAS_SIZE + x,
+                    x, y, color,
+                    wallet: walletPublicKey?.toString(),
+                    tx_signature: txSignature,
+                    updated_at: new Date().toISOString()
+                });
+                
+                // Update stats
+                await supabase.from('stats').upsert({
+                    id: 1,
+                    pixels_painted: stats.pixelsPainted,
+                    tokens_burned: stats.tokensBurned
                 });
             } catch (err) {
-                localStorage.setItem('mdh_canvas', JSON.stringify({ canvas: canvasState, stats }));
+                console.error('Save error:', err);
             }
         }
 
         async function loadCanvasState() {
-            try {
-                const resp = await fetch('/api/canvas');
-                if (resp.ok) {
-                    const data = await resp.json();
-                    canvasState = data.pixels || canvasState;
-                    stats = data.stats || stats;
+            if (!supabase) {
+                try {
+                    const saved = JSON.parse(localStorage.getItem('mdh_canvas') || '{}');
+                    if (saved.canvas) { canvasState = saved.canvas; stats = saved.stats || stats; }
                     updateStats();
                     renderCanvas();
-                    return;
-                }
-            } catch (err) {}
+                } catch (err) {}
+                return;
+            }
             
             try {
-                const saved = JSON.parse(localStorage.getItem('mdh_canvas') || '{}');
-                if (saved.canvas) { canvasState = saved.canvas; stats = saved.stats || stats; }
+                // Load all pixels
+                const { data: pixels } = await supabase
+                    .from('pixels')
+                    .select('x, y, color');
+                
+                if (pixels) {
+                    pixels.forEach(p => {
+                        canvasState[p.y * CONFIG.CANVAS_SIZE + p.x] = p.color;
+                    });
+                }
+                
+                // Load stats
+                const { data: statsData } = await supabase
+                    .from('stats')
+                    .select('*')
+                    .eq('id', 1)
+                    .single();
+                
+                if (statsData) {
+                    stats.pixelsPainted = statsData.pixels_painted || 0;
+                    stats.tokensBurned = statsData.tokens_burned || 0;
+                }
+                
                 updateStats();
                 renderCanvas();
-            } catch (err) {}
+            } catch (err) {
+                console.error('Load error:', err);
+            }
         }
 
         function updateStats() {
@@ -1055,8 +1102,27 @@
             document.getElementById('statBurned').textContent = stats.tokensBurned.toLocaleString();
         }
 
-        // Poll for updates
-        setInterval(loadCanvasState, 5000);
+        // Real-time updates
+        function setupRealtimeUpdates() {
+            if (!supabase) return;
+            
+            supabase
+                .channel('pixels')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'pixels' }, (payload) => {
+                    if (payload.new) {
+                        const p = payload.new;
+                        canvasState[p.y * CONFIG.CANVAS_SIZE + p.x] = p.color;
+                        stats.pixelsPainted++;
+                        stats.tokensBurned += CONFIG.COST_PER_PIXEL;
+                        updateStats();
+                        renderCanvas();
+                    }
+                })
+                .subscribe();
+        }
+
+        // Poll for updates (fallback)
+        setInterval(loadCanvasState, 10000);
 
         // ═══════════════════════════════════════════
         // UI HELPERS
