@@ -1260,18 +1260,36 @@
             try {
                 console.log('Loading pixels from Supabase...');
                 
-                // Load all pixels (increase limit for large canvas)
-                const { data: pixels, error: pixelsError } = await db
-                    .from('pixels')
-                    .select('x, y, color')
-                    .limit(10000);
+                // Load ALL pixels with pagination (Supabase limits to 1000 per request)
+                let allPixels = [];
+                let offset = 0;
+                const batchSize = 1000;
+                let hasMore = true;
                 
-                if (pixelsError) {
-                    console.error('Supabase pixels error:', pixelsError);
-                    showToast('Error loading pixels', 'error');
-                } else if (pixels && pixels.length > 0) {
-                    console.log('Loaded pixels:', pixels.length);
-                    pixels.forEach(p => {
+                while (hasMore) {
+                    const { data: batch, error: batchError } = await db
+                        .from('pixels')
+                        .select('x, y, color')
+                        .range(offset, offset + batchSize - 1);
+                    
+                    if (batchError) {
+                        console.error('Supabase batch error:', batchError);
+                        break;
+                    }
+                    
+                    if (batch && batch.length > 0) {
+                        allPixels = allPixels.concat(batch);
+                        offset += batchSize;
+                        hasMore = batch.length === batchSize;
+                    } else {
+                        hasMore = false;
+                    }
+                }
+                
+                console.log('Total pixels loaded:', allPixels.length);
+                
+                if (allPixels.length > 0) {
+                    allPixels.forEach(p => {
                         if (p.x >= 0 && p.x < CONFIG.CANVAS_SIZE && p.y >= 0 && p.y < CONFIG.CANVAS_SIZE) {
                             canvasState[p.y * CONFIG.CANVAS_SIZE + p.x] = p.color;
                         }
