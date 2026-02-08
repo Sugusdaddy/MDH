@@ -1311,26 +1311,11 @@
             document.getElementById('statBurned').textContent = stats.tokensBurned.toLocaleString();
         }
 
-        // Real-time updates
+        // Real-time updates (disabled - using polling instead)
         function setupRealtimeUpdates() {
-            if (!db) return;
-            
-            try {
-                db.channel('pixels')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'pixels' }, (payload) => {
-                        if (payload.new) {
-                            const p = payload.new;
-                            canvasState[p.y * CONFIG.CANVAS_SIZE + p.x] = p.color;
-                            stats.pixelsPainted++;
-                            stats.tokensBurned += CONFIG.COST_PER_PIXEL;
-                            updateStats();
-                            renderCanvas();
-                        }
-                    })
-                    .subscribe();
-            } catch (e) {
-                console.warn('Realtime setup failed:', e);
-            }
+            // Realtime disabled to avoid WebSocket errors
+            // Using polling every 10 seconds instead
+            console.log('Using polling for updates (realtime disabled)');
         }
 
         // Poll for updates (fallback)
