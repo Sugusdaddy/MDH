@@ -562,10 +562,16 @@
             SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjdXNpYnZlbWh2cm5udHFiemV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NDU0NTAsImV4cCI6MjA4NjEyMTQ1MH0.oF06DWIEn7UDQ7a9zYzDX3T9r71EfUJQdNaX7TjRVdw'
         };
         
-        // Initialize Supabase
+        // Initialize Supabase (with fallback)
         let supabase = null;
-        if (CONFIG.SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
-            supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+        try {
+            if (CONFIG.SUPABASE_URL !== 'YOUR_SUPABASE_URL' && window.supabase) {
+                supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+                console.log('Supabase initialized');
+            }
+        } catch (e) {
+            console.warn('Supabase init failed, using localStorage:', e);
+            supabase = null;
         }
 
         // ═══════════════════════════════════════════
@@ -635,12 +641,23 @@
         // ═══════════════════════════════════════════
         // INIT
         // ═══════════════════════════════════════════
-        document.addEventListener('DOMContentLoaded', () => {
-            connection = new solanaWeb3.Connection(CONFIG.RPC_URL, 'confirmed');
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                connection = new solanaWeb3.Connection(CONFIG.RPC_URL, 'confirmed');
+            } catch (e) {
+                console.error('RPC connection failed:', e);
+            }
+            
             initCanvas();
             initColors();
             initWalletList();
-            loadCanvasState();
+            
+            try {
+                await loadCanvasState();
+            } catch (e) {
+                console.error('Load canvas failed:', e);
+            }
+            
             setupRealtimeUpdates();
         });
 
@@ -1056,36 +1073,43 @@
         }
 
         async function loadCanvasState() {
+            // Always render canvas first
+            renderCanvas();
+            
             if (!supabase) {
                 try {
                     const saved = JSON.parse(localStorage.getItem('mdh_canvas') || '{}');
                     if (saved.canvas) { canvasState = saved.canvas; stats = saved.stats || stats; }
                     updateStats();
                     renderCanvas();
-                } catch (err) {}
+                } catch (err) {
+                    console.warn('localStorage load failed:', err);
+                }
                 return;
             }
             
             try {
                 // Load all pixels
-                const { data: pixels } = await supabase
+                const { data: pixels, error: pixelsError } = await supabase
                     .from('pixels')
                     .select('x, y, color');
                 
-                if (pixels) {
+                if (pixelsError) {
+                    console.warn('Supabase pixels error:', pixelsError);
+                } else if (pixels && pixels.length > 0) {
                     pixels.forEach(p => {
                         canvasState[p.y * CONFIG.CANVAS_SIZE + p.x] = p.color;
                     });
                 }
                 
                 // Load stats
-                const { data: statsData } = await supabase
+                const { data: statsData, error: statsError } = await supabase
                     .from('stats')
                     .select('*')
                     .eq('id', 1)
                     .single();
                 
-                if (statsData) {
+                if (!statsError && statsData) {
                     stats.pixelsPainted = statsData.pixels_painted || 0;
                     stats.tokensBurned = statsData.tokens_burned || 0;
                 }
@@ -1093,7 +1117,14 @@
                 updateStats();
                 renderCanvas();
             } catch (err) {
-                console.error('Load error:', err);
+                console.error('Supabase load error:', err);
+                // Fallback to localStorage
+                try {
+                    const saved = JSON.parse(localStorage.getItem('mdh_canvas') || '{}');
+                    if (saved.canvas) { canvasState = saved.canvas; stats = saved.stats || stats; }
+                    updateStats();
+                    renderCanvas();
+                } catch (e) {}
             }
         }
 
