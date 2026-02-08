@@ -714,7 +714,18 @@
             renderCanvas();
         }
         
+        function isPixelPainted(x, y) {
+            const color = canvasState[y * CONFIG.CANVAS_SIZE + x];
+            return color && color !== '#000000';
+        }
+        
         function togglePixelSelection(x, y) {
+            // Don't allow selecting already painted pixels
+            if (isPixelPainted(x, y)) {
+                showToast('Pixel already painted!', 'error');
+                return;
+            }
+            
             const idx = selectedPixels.findIndex(p => p.x === x && p.y === y);
             if (idx === -1) {
                 selectedPixels.push({ x, y });
@@ -727,11 +738,13 @@
             const minY = Math.min(y1, y2);
             const maxY = Math.max(y1, y2);
             
-            // Clear and add all pixels in rectangle
+            // Clear and add all unpainted pixels in rectangle
             selectedPixels = [];
             for (let y = minY; y <= maxY; y++) {
                 for (let x = minX; x <= maxX; x++) {
-                    selectedPixels.push({ x, y });
+                    if (!isPixelPainted(x, y)) {
+                        selectedPixels.push({ x, y });
+                    }
                 }
             }
             renderCanvas();
@@ -980,6 +993,22 @@
         // ═══════════════════════════════════════════
         async function paintPixel() {
             if (!walletConnected || selectedPixels.length === 0) return;
+
+            // Filter out any already painted pixels (double check)
+            const availablePixels = selectedPixels.filter(p => !isPixelPainted(p.x, p.y));
+            
+            if (availablePixels.length === 0) {
+                showToast('All selected pixels are already painted!', 'error');
+                selectedPixels = [];
+                updateSelectionUI();
+                renderCanvas();
+                return;
+            }
+            
+            if (availablePixels.length !== selectedPixels.length) {
+                showToast(`${selectedPixels.length - availablePixels.length} pixels already painted, painting ${availablePixels.length}`, 'info');
+                selectedPixels = availablePixels;
+            }
 
             const pixelCount = selectedPixels.length;
             const totalCost = pixelCount * CONFIG.COST_PER_PIXEL;
