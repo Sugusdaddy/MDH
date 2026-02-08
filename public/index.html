@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MDH — Million Dollar Homepage</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #000000;
+            --surface: #0a0a0a;
+            --border: #1a1a1a;
+            --text: #ffffff;
+            --text-secondary: #666;
+            --accent: #fff;
+            --green: #00ff00;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .logo span {
+            color: var(--green);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .stats-mini {
+            display: flex;
+            gap: 25px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .stats-mini strong {
+            color: var(--text);
+        }
+
+        .btn-connect {
+            background: var(--text);
+            color: var(--bg);
+            border: none;
+            padding: 10px 20px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-connect:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-connect.connected {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        /* Main Layout */
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            min-height: calc(100vh - 73px);
+        }
+
+        @media (max-width: 900px) {
+            .main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Canvas Area */
+        .canvas-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            background: var(--surface);
+        }
+
+        .canvas-container {
+            position: relative;
+            border: 1px solid var(--border);
+        }
+
+        #pixelCanvas {
+            display: block;
+            cursor: crosshair;
+            image-rendering: pixelated;
+        }
+
+        .canvas-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 500px;
+            margin-top: 15px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .zoom-btn {
+            width: 28px;
+            height: 28px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .zoom-btn:hover {
+            border-color: var(--text-secondary);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            border-left: 1px solid var(--border);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .section-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        /* Color Picker */
+        .color-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .color-display {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .color-preview {
+            width: 50px;
+            height: 50px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .color-preview input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .color-hex {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+        }
+
+        .color-swatch {
+            aspect-ratio: 1;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.15);
+            z-index: 1;
+        }
+
+        .color-swatch.active {
+            border-color: var(--text);
+            box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--text);
+        }
+
+        /* Selected Pixel */
+        .selection-section {
+            background: var(--bg);
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .selection-empty {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .selection-coords {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .selection-cost {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .selection-cost strong {
+            color: var(--green);
+        }
+
+        /* Paint Button */
+        .btn-paint {
+            width: 100%;
+            padding: 18px;
+            background: var(--green);
+            color: var(--bg);
+            border: none;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-paint:hover:not(:disabled) {
+            filter: brightness(1.1);
+        }
+
+        .btn-paint:disabled {
+            background: var(--border);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        /* Info */
+        .info-section {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+        }
+
+        .info-row span:first-child {
+            color: var(--text-secondary);
+        }
+
+        .info-row span:last-child {
+            font-family: 'Space Mono', monospace;
+        }
+
+        /* Wallet Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 30px;
+            width: 90%;
+            max-width: 380px;
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+        }
+
+        .wallet-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .wallet-option {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .wallet-option:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .wallet-option img {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+        }
+
+        .wallet-option .wallet-name {
+            font-weight: 500;
+        }
+
+        .wallet-option .wallet-status {
+            margin-left: auto;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .wallet-option .wallet-status.detected {
+            color: var(--green);
+        }
+
+        .modal-close {
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            z-index: 2000;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--border);
+            border-top-color: var(--green);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 15px 25px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            font-size: 0.85rem;
+            z-index: 3000;
+            transition: transform 0.3s;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.success {
+            border-color: var(--green);
+        }
+
+        .toast.error {
+            border-color: #ff4444;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">MDH<span>.</span></div>
+        <div class="header-right">
+            <div class="stats-mini">
+                <span><strong id="statPixels">0</strong> painted</span>
+                <span><strong id="statBurned">0</strong> burned</span>
+            </div>
+            <button class="btn-connect" id="connectBtn" onclick="openWalletModal()">
+                Connect
+            </button>
+        </div>
+    </header>
+
+    <main class="main">
+        <section class="canvas-section">
+            <div class="canvas-container">
+                <canvas id="pixelCanvas"></canvas>
+            </div>
+            <div class="canvas-info">
+                <span id="coordsDisplay">X: 0 Y: 0</span>
+                <div class="zoom-controls">
+                    <button class="zoom-btn" onclick="zoomOut()">−</button>
+                    <span id="zoomLevel">5×</span>
+                    <button class="zoom-btn" onclick="zoomIn()">+</button>
+                </div>
+            </div>
+        </section>
+
+        <aside class="sidebar">
+            <div class="color-section">
+                <div class="section-title">Color</div>
+                <div class="color-display">
+                    <div class="color-preview" id="colorPreview" style="background: #00ff00;">
+                        <input type="color" id="colorPicker" value="#00ff00">
+                    </div>
+                    <span class="color-hex" id="colorHex">#00ff00</span>
+                </div>
+                <div class="color-grid" id="colorGrid"></div>
+            </div>
+
+            <div class="selection-section">
+                <div class="section-title">Selected</div>
+                <div id="selectionContent">
+                    <div class="selection-empty">Click a pixel to select</div>
+                </div>
+            </div>
+
+            <button class="btn-paint" id="paintBtn" onclick="paintPixel()" disabled>
+                Paint Pixel
+            </button>
+
+            <div class="info-section">
+                <div class="section-title">Info</div>
+                <div class="info-row">
+                    <span>Canvas</span>
+                    <span>100 × 100</span>
+                </div>
+                <div class="info-row">
+                    <span>Cost</span>
+                    <span>10,000 $GUARDIAN</span>
+                </div>
+                <div class="info-row">
+                    <span>Total Supply</span>
+                    <span>1,000,000,000</span>
+                </div>
+                <div class="info-row">
+                    <span>Contract</span>
+                    <span style="font-size: 0.7rem;">Atu...BAGS</span>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Wallet Modal -->
+    <div class="modal-overlay" id="walletModal">
+        <div class="modal">
+            <div class="modal-title">Connect Wallet</div>
+            <div class="wallet-list" id="walletList"></div>
+            <button class="modal-close" onclick="closeWalletModal()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">Processing...</div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script>
+        // ═══════════════════════════════════════════
+        // CONFIG
+        // ═══════════════════════════════════════════
+        const CONFIG = {
+            CANVAS_SIZE: 100,
+            TOKEN_MINT: 'AtuZNNV27hs3AjTf5dLMyxftsnqdv8DpmJWCmEimBAGS',
+            COST_PER_PIXEL: 10000,
+            TOKEN_DECIMALS: 6,
+            RPC_URL: 'https://mainnet.helius-rpc.com/?api-key=d3e130a0-6d2c-4b0e-9175-45f3a3cda97b'
+        };
+
+        // ═══════════════════════════════════════════
+        // STATE
+        // ═══════════════════════════════════════════
+        let canvasState = new Array(CONFIG.CANVAS_SIZE * CONFIG.CANVAS_SIZE).fill('#000000');
+        let selectedX = null;
+        let selectedY = null;
+        let selectedColor = '#00ff00';
+        let zoomLevel = 5;
+        let walletConnected = false;
+        let walletPublicKey = null;
+        let walletProvider = null;
+        let connection = null;
+        let stats = { pixelsPainted: 0, tokensBurned: 0 };
+
+        // ═══════════════════════════════════════════
+        // WALLETS CONFIG
+        // ═══════════════════════════════════════════
+        const WALLETS = [
+            {
+                name: 'Phantom',
+                icon: 'https://phantom.app/img/phantom-icon-purple.svg',
+                detect: () => window.phantom?.solana?.isPhantom,
+                provider: () => window.phantom?.solana
+            },
+            {
+                name: 'Solflare',
+                icon: 'https://solflare.com/favicon.ico',
+                detect: () => window.solflare?.isSolflare,
+                provider: () => window.solflare
+            },
+            {
+                name: 'Backpack',
+                icon: 'https://backpack.app/favicon.ico',
+                detect: () => window.backpack,
+                provider: () => window.backpack
+            },
+            {
+                name: 'Glow',
+                icon: 'https://glow.app/favicon.ico',
+                detect: () => window.glow,
+                provider: () => window.glow
+            },
+            {
+                name: 'Trust Wallet',
+                icon: 'https://trustwallet.com/assets/images/favicon.png',
+                detect: () => window.trustwallet?.solana,
+                provider: () => window.trustwallet?.solana
+            },
+            {
+                name: 'Coinbase',
+                icon: 'https://www.coinbase.com/favicon.ico',
+                detect: () => window.coinbaseSolana,
+                provider: () => window.coinbaseSolana
+            }
+        ];
+
+        // Colors
+        const PRESET_COLORS = [
+            '#ffffff', '#c0c0c0', '#808080', '#000000',
+            '#ff0000', '#800000', '#ffff00', '#808000',
+            '#00ff00', '#008000', '#00ffff', '#008080',
+            '#0000ff', '#000080', '#ff00ff', '#800080'
+        ];
+
+        // ═══════════════════════════════════════════
+        // INIT
+        // ═══════════════════════════════════════════
+        document.addEventListener('DOMContentLoaded', () => {
+            connection = new solanaWeb3.Connection(CONFIG.RPC_URL, 'confirmed');
+            initCanvas();
+            initColors();
+            initWalletList();
+            loadCanvasState();
+        });
+
+        function initCanvas() {
+            const canvas = document.getElementById('pixelCanvas');
+            
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = Math.floor((e.clientX - rect.left) / zoomLevel);
+                const y = Math.floor((e.clientY - rect.top) / zoomLevel);
+                if (x >= 0 && x < CONFIG.CANVAS_SIZE && y >= 0 && y < CONFIG.CANVAS_SIZE) {
+                    document.getElementById('coordsDisplay').textContent = `X: ${x} Y: ${y}`;
+                }
+            });
+
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = Math.floor((e.clientX - rect.left) / zoomLevel);
+                const y = Math.floor((e.clientY - rect.top) / zoomLevel);
+                if (x >= 0 && x < CONFIG.CANVAS_SIZE && y >= 0 && y < CONFIG.CANVAS_SIZE) {
+                    selectPixel(x, y);
+                }
+            });
+
+            renderCanvas();
+        }
+
+        function initColors() {
+            const grid = document.getElementById('colorGrid');
+            const picker = document.getElementById('colorPicker');
+            const preview = document.getElementById('colorPreview');
+            const hex = document.getElementById('colorHex');
+
+            PRESET_COLORS.forEach(color => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch' + (color === selectedColor ? ' active' : '');
+                swatch.style.background = color;
+                swatch.onclick = () => selectColor(color);
+                grid.appendChild(swatch);
+            });
+
+            picker.addEventListener('input', (e) => selectColor(e.target.value));
+        }
+
+        function selectColor(color) {
+            selectedColor = color;
+            document.getElementById('colorPreview').style.background = color;
+            document.getElementById('colorPicker').value = color;
+            document.getElementById('colorHex').textContent = color;
+            
+            document.querySelectorAll('.color-swatch').forEach(s => {
+                s.classList.toggle('active', s.style.background === color || 
+                    rgbToHex(s.style.background) === color.toLowerCase());
+            });
+        }
+
+        function rgbToHex(rgb) {
+            if (rgb.startsWith('#')) return rgb.toLowerCase();
+            const match = rgb.match(/\d+/g);
+            if (!match) return rgb;
+            return '#' + match.slice(0,3).map(x => parseInt(x).toString(16).padStart(2,'0')).join('');
+        }
+
+        function initWalletList() {
+            const list = document.getElementById('walletList');
+            list.innerHTML = '';
+
+            WALLETS.forEach(wallet => {
+                const detected = wallet.detect();
+                const option = document.createElement('div');
+                option.className = 'wallet-option';
+                option.innerHTML = `
+                    <img src="${wallet.icon}" alt="${wallet.name}" onerror="this.style.display='none'">
+                    <span class="wallet-name">${wallet.name}</span>
+                    <span class="wallet-status ${detected ? 'detected' : ''}">${detected ? 'Detected' : 'Not installed'}</span>
+                `;
+                if (detected) {
+                    option.onclick = () => connectWallet(wallet);
+                } else {
+                    option.style.opacity = '0.5';
+                    option.style.cursor = 'default';
+                }
+                list.appendChild(option);
+            });
+        }
+
+        // ═══════════════════════════════════════════
+        // WALLET
+        // ═══════════════════════════════════════════
+        function openWalletModal() {
+            if (walletConnected) {
+                disconnectWallet();
+                return;
+            }
+            initWalletList();
+            document.getElementById('walletModal').classList.add('show');
+        }
+
+        function closeWalletModal() {
+            document.getElementById('walletModal').classList.remove('show');
+        }
+
+        async function connectWallet(wallet) {
+            try {
+                closeWalletModal();
+                showLoading('Connecting...');
+
+                walletProvider = wallet.provider();
+                const resp = await walletProvider.connect();
+                walletPublicKey = resp.publicKey;
+                walletConnected = true;
+
+                const btn = document.getElementById('connectBtn');
+                btn.classList.add('connected');
+                btn.textContent = `${walletPublicKey.toString().slice(0, 4)}...${walletPublicKey.toString().slice(-4)}`;
+
+                if (selectedX !== null) {
+                    document.getElementById('paintBtn').disabled = false;
+                }
+
+                hideLoading();
+                showToast('Connected', 'success');
+            } catch (err) {
+                hideLoading();
+                showToast('Connection failed', 'error');
+            }
+        }
+
+        function disconnectWallet() {
+            if (walletProvider?.disconnect) {
+                walletProvider.disconnect();
+            }
+            walletConnected = false;
+            walletPublicKey = null;
+            walletProvider = null;
+
+            const btn = document.getElementById('connectBtn');
+            btn.classList.remove('connected');
+            btn.textContent = 'Connect';
+            document.getElementById('paintBtn').disabled = true;
+
+            showToast('Disconnected', 'success');
+        }
+
+        // ═══════════════════════════════════════════
+        // CANVAS
+        // ═══════════════════════════════════════════
+        function renderCanvas() {
+            const canvas = document.getElementById('pixelCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = CONFIG.CANVAS_SIZE * zoomLevel;
+            canvas.height = CONFIG.CANVAS_SIZE * zoomLevel;
+
+            for (let y = 0; y < CONFIG.CANVAS_SIZE; y++) {
+                for (let x = 0; x < CONFIG.CANVAS_SIZE; x++) {
+                    ctx.fillStyle = canvasState[y * CONFIG.CANVAS_SIZE + x];
+                    ctx.fillRect(x * zoomLevel, y * zoomLevel, zoomLevel, zoomLevel);
+                }
+            }
+
+            // Grid
+            if (zoomLevel >= 4) {
+                ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+                ctx.lineWidth = 0.5;
+                for (let i = 0; i <= CONFIG.CANVAS_SIZE; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(i * zoomLevel, 0);
+                    ctx.lineTo(i * zoomLevel, canvas.height);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(0, i * zoomLevel);
+                    ctx.lineTo(canvas.width, i * zoomLevel);
+                    ctx.stroke();
+                }
+            }
+
+            // Selection highlight
+            if (selectedX !== null && selectedY !== null) {
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(
+                    selectedX * zoomLevel + 1,
+                    selectedY * zoomLevel + 1,
+                    zoomLevel - 2,
+                    zoomLevel - 2
+                );
+            }
+
+            document.getElementById('zoomLevel').textContent = `${zoomLevel}×`;
+        }
+
+        function selectPixel(x, y) {
+            selectedX = x;
+            selectedY = y;
+            
+            document.getElementById('selectionContent').innerHTML = `
+                <div class="selection-coords">(${x}, ${y})</div>
+                <div class="selection-cost">Cost: <strong>10,000 $GUARDIAN</strong></div>
+            `;
+            
+            document.getElementById('paintBtn').disabled = !walletConnected;
+            renderCanvas();
+        }
+
+        function zoomIn() {
+            if (zoomLevel < 10) { zoomLevel++; renderCanvas(); }
+        }
+
+        function zoomOut() {
+            if (zoomLevel > 2) { zoomLevel--; renderCanvas(); }
+        }
+
+        // ═══════════════════════════════════════════
+        // PAINT
+        // ═══════════════════════════════════════════
+        async function paintPixel() {
+            if (!walletConnected || selectedX === null) return;
+
+            showLoading('Preparing transaction...');
+
+            try {
+                const mintPubkey = new solanaWeb3.PublicKey(CONFIG.TOKEN_MINT);
+                
+                const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+                    walletPublicKey,
+                    { mint: mintPubkey }
+                );
+
+                if (tokenAccounts.value.length === 0) {
+                    hideLoading();
+                    showToast('No $GUARDIAN tokens found', 'error');
+                    return;
+                }
+
+                const tokenAccount = tokenAccounts.value[0];
+                const balance = tokenAccount.account.data.parsed.info.tokenAmount.uiAmount;
+
+                if (balance < CONFIG.COST_PER_PIXEL) {
+                    hideLoading();
+                    showToast(`Need ${CONFIG.COST_PER_PIXEL.toLocaleString()} $GUARDIAN`, 'error');
+                    return;
+                }
+
+                showLoading('Creating burn transaction...');
+
+                const burnAmount = CONFIG.COST_PER_PIXEL * Math.pow(10, CONFIG.TOKEN_DECIMALS);
+                const transaction = new solanaWeb3.Transaction();
+                
+                const burnInstruction = createBurnInstruction(
+                    tokenAccount.pubkey,
+                    mintPubkey,
+                    walletPublicKey,
+                    burnAmount
+                );
+                
+                transaction.add(burnInstruction);
+
+                const { blockhash } = await connection.getLatestBlockhash();
+                transaction.recentBlockhash = blockhash;
+                transaction.feePayer = walletPublicKey;
+
+                showLoading('Approve in wallet...');
+
+                const signed = await walletProvider.signTransaction(transaction);
+                
+                showLoading('Sending...');
+                const signature = await connection.sendRawTransaction(signed.serialize());
+                
+                showLoading('Confirming...');
+                await connection.confirmTransaction(signature, 'confirmed');
+
+                // Update state
+                const px = selectedX, py = selectedY, pc = selectedColor;
+                canvasState[py * CONFIG.CANVAS_SIZE + px] = pc;
+                stats.pixelsPainted++;
+                stats.tokensBurned += CONFIG.COST_PER_PIXEL;
+                
+                saveCanvasState(px, py, pc, signature);
+                updateStats();
+
+                selectedX = null;
+                selectedY = null;
+                document.getElementById('selectionContent').innerHTML = 
+                    '<div class="selection-empty">Click a pixel to select</div>';
+                document.getElementById('paintBtn').disabled = true;
+                
+                renderCanvas();
+                hideLoading();
+                showToast('Pixel painted!', 'success');
+
+            } catch (err) {
+                hideLoading();
+                if (err.message?.includes('User rejected') || err.message?.includes('cancelled')) {
+                    showToast('Cancelled', 'error');
+                } else {
+                    showToast('Transaction failed', 'error');
+                    console.error(err);
+                }
+            }
+        }
+
+        function createBurnInstruction(account, mint, owner, amount) {
+            const TOKEN_PROGRAM_ID = new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+            const data = Buffer.alloc(9);
+            data.writeUInt8(8, 0);
+            data.writeBigUInt64LE(BigInt(amount), 1);
+            return new solanaWeb3.TransactionInstruction({
+                keys: [
+                    { pubkey: account, isSigner: false, isWritable: true },
+                    { pubkey: mint, isSigner: false, isWritable: true },
+                    { pubkey: owner, isSigner: true, isWritable: false },
+                ],
+                programId: TOKEN_PROGRAM_ID,
+                data,
+            });
+        }
+
+        // ═══════════════════════════════════════════
+        // STATE PERSISTENCE
+        // ═══════════════════════════════════════════
+        async function saveCanvasState(x, y, color, txSignature) {
+            try {
+                await fetch('/api/pixel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ x, y, color, wallet: walletPublicKey?.toString(), txSignature })
+                });
+            } catch (err) {
+                localStorage.setItem('mdh_canvas', JSON.stringify({ canvas: canvasState, stats }));
+            }
+        }
+
+        async function loadCanvasState() {
+            try {
+                const resp = await fetch('/api/canvas');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    canvasState = data.pixels || canvasState;
+                    stats = data.stats || stats;
+                    updateStats();
+                    renderCanvas();
+                    return;
+                }
+            } catch (err) {}
+            
+            try {
+                const saved = JSON.parse(localStorage.getItem('mdh_canvas') || '{}');
+                if (saved.canvas) { canvasState = saved.canvas; stats = saved.stats || stats; }
+                updateStats();
+                renderCanvas();
+            } catch (err) {}
+        }
+
+        function updateStats() {
+            document.getElementById('statPixels').textContent = stats.pixelsPainted.toLocaleString();
+            document.getElementById('statBurned').textContent = stats.tokensBurned.toLocaleString();
+        }
+
+        // Poll for updates
+        setInterval(loadCanvasState, 5000);
+
+        // ═══════════════════════════════════════════
+        // UI HELPERS
+        // ═══════════════════════════════════════════
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('show');
+        }
+
+        function showToast(message, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast show ${type}`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>

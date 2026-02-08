@@ -1,0 +1,19 @@
+{
+  "name": "mdh-million-dollar-homepage",
+  "version": "1.0.0",
+  "description": "MDH - Million Dollar Homepage | 10,000 $GUARDIAN per pixel",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "solana",
+    "guardian",
+    "pixel-art",
+    "blockchain",
+    "nft"
+  ],
+  "author": "GUARDIAN",
+  "license": "MIT"
+}
