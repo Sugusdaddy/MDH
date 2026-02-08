@@ -509,7 +509,7 @@
                 <div class="section-title">Info</div>
                 <div class="info-row">
                     <span>Canvas</span>
-                    <span>100 × 100</span>
+                    <span>500 × 500</span>
                 </div>
                 <div class="info-row">
                     <span>Cost</span>
@@ -552,7 +552,7 @@
         // CONFIG
         // ═══════════════════════════════════════════
         const CONFIG = {
-            CANVAS_SIZE: 100,
+            CANVAS_SIZE: 500,
             TOKEN_MINT: 'AtuZNNV27hs3AjTf5dLMyxftsnqdv8DpmJWCmEimBAGS',
             COST_PER_PIXEL: 10000,
             TOKEN_DECIMALS: 9,
@@ -1046,14 +1046,17 @@
         // STATE PERSISTENCE (Supabase)
         // ═══════════════════════════════════════════
         async function saveCanvasState(x, y, color, txSignature) {
+            console.log('Saving pixel:', { x, y, color, txSignature, db: !!db });
+            
             if (!db) {
+                console.log('No db, using localStorage');
                 localStorage.setItem('mdh_canvas', JSON.stringify({ canvas: canvasState, stats }));
                 return;
             }
             
             try {
                 // Save pixel to database
-                await db.from('pixels').upsert({
+                const { data: pixelData, error: pixelError } = await db.from('pixels').upsert({
                     id: y * CONFIG.CANVAS_SIZE + x,
                     x, y, color,
                     wallet: walletPublicKey?.toString(),
@@ -1061,14 +1064,26 @@
                     updated_at: new Date().toISOString()
                 });
                 
+                if (pixelError) {
+                    console.error('Pixel save error:', pixelError);
+                    showToast('Error saving pixel: ' + pixelError.message, 'error');
+                } else {
+                    console.log('Pixel saved:', pixelData);
+                }
+                
                 // Update stats
-                await db.from('stats').upsert({
+                const { error: statsError } = await db.from('stats').upsert({
                     id: 1,
                     pixels_painted: stats.pixelsPainted,
                     tokens_burned: stats.tokensBurned
                 });
+                
+                if (statsError) {
+                    console.error('Stats save error:', statsError);
+                }
             } catch (err) {
                 console.error('Save error:', err);
+                showToast('Save failed', 'error');
             }
         }
 
@@ -1090,7 +1105,7 @@
             
             try {
                 // Load all pixels
-                const { data: pixels, error: pixelsError } = await supabase
+                const { data: pixels, error: pixelsError } = await db
                     .from('pixels')
                     .select('x, y, color');
                 
@@ -1103,7 +1118,7 @@
                 }
                 
                 // Load stats
-                const { data: statsData, error: statsError } = await supabase
+                const { data: statsData, error: statsError } = await db
                     .from('stats')
                     .select('*')
                     .eq('id', 1)
