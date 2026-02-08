@@ -513,7 +513,7 @@
                 </div>
                 <div class="info-row">
                     <span>Cost</span>
-                    <span>10,000 $GUARDIAN</span>
+                    <span>10,000 $MDH</span>
                 </div>
                 <div class="info-row">
                     <span>Total Supply</span>
@@ -893,7 +893,7 @@
             
             document.getElementById('selectionContent').innerHTML = `
                 <div class="selection-coords">(${x}, ${y})</div>
-                <div class="selection-cost">Cost: <strong>10,000 $GUARDIAN</strong></div>
+                <div class="selection-cost">Cost: <strong>10,000 $MDH</strong></div>
             `;
             
             document.getElementById('paintBtn').disabled = !walletConnected;
@@ -926,7 +926,7 @@
 
                 if (tokenAccounts.value.length === 0) {
                     hideLoading();
-                    showToast('No $GUARDIAN tokens found', 'error');
+                    showToast('No $MDH tokens found', 'error');
                     return;
                 }
 
@@ -935,7 +935,7 @@
 
                 if (balance < CONFIG.COST_PER_PIXEL) {
                     hideLoading();
-                    showToast(`Need ${CONFIG.COST_PER_PIXEL.toLocaleString()} $GUARDIAN`, 'error');
+                    showToast(`Need ${CONFIG.COST_PER_PIXEL.toLocaleString()} $MDH`, 'error');
                     return;
                 }
 
