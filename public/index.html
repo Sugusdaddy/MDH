@@ -1242,7 +1242,10 @@
             // Always render canvas first
             renderCanvas();
             
+            console.log('loadCanvasState called, db:', !!db);
+            
             if (!db) {
+                console.warn('No database connection, using localStorage');
                 try {
                     const saved = JSON.parse(localStorage.getItem('mdh_canvas') || '{}');
                     if (saved.canvas) { canvasState = saved.canvas; stats = saved.stats || stats; }
@@ -1255,17 +1258,26 @@
             }
             
             try {
-                // Load all pixels
+                console.log('Loading pixels from Supabase...');
+                
+                // Load all pixels (increase limit for large canvas)
                 const { data: pixels, error: pixelsError } = await db
                     .from('pixels')
-                    .select('x, y, color');
+                    .select('x, y, color')
+                    .limit(10000);
                 
                 if (pixelsError) {
-                    console.warn('Supabase pixels error:', pixelsError);
+                    console.error('Supabase pixels error:', pixelsError);
+                    showToast('Error loading pixels', 'error');
                 } else if (pixels && pixels.length > 0) {
+                    console.log('Loaded pixels:', pixels.length);
                     pixels.forEach(p => {
-                        canvasState[p.y * CONFIG.CANVAS_SIZE + p.x] = p.color;
+                        if (p.x >= 0 && p.x < CONFIG.CANVAS_SIZE && p.y >= 0 && p.y < CONFIG.CANVAS_SIZE) {
+                            canvasState[p.y * CONFIG.CANVAS_SIZE + p.x] = p.color;
+                        }
                     });
+                } else {
+                    console.log('No pixels found in database');
                 }
                 
                 // Load stats
